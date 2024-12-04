@@ -1,0 +1,155 @@
+---
+title: "Activity10"
+---
+
+# Prompt
+
+You're working as a medical researcher at the NIH. Using the dataset provided, Which biomarker a most likely driver of diabetes (e.g. causes the greatest increase in diabetes risk) -- insulin, glucose, or both equally? Note: For "outcome", 1=diabetes, 0= no diabetes
+
+# Load the packages
+
+`ggplot2` will be used for visualizations, `dplyr` will be used for data manipulation, `tidyr` will be used to reshape the data.
+
+```{r}
+#| label: load-packages
+#| echo: true
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+
+```
+
+# Load the data
+
+You must first download this dataset from CANVAS!
+
+```{r}
+#| label: load-dataset
+data <- read.csv("~/Downloads/Activity 10/diabetes_dataset.csv")
+```
+
+# Clean the data
+
+Organize glucose and insulin into quartiles (three groups) for further analysis
+
+```{r}
+#| label: data-wrangling
+data = data %>% 
+  mutate(Glucose_Quartile = ntile(Glucose, 3)) %>%
+  mutate(Insulin_Quartile = ntile(Insulin, 3))
+```
+
+# Exploratory Data Analysis
+
+Exploratory data analysis, or EDA, is a way to dig into data sets, uncover patterns, spot outliers, and explore relationships between variables. It's usually the first step in analysis, giving a solid foundation before diving into formal modeling.
+
+## View the first few rows of the diabetes datasets
+
+```{r}
+#| label: head
+head(data)
+```
+
+## Summarize for the variables in the diabetes dataset
+
+```{r}
+#| label: summary
+summary(data)
+```
+
+# Show the relationship between Insulin and Diabetes, and Glucose and Diabetes
+
+## Visualization of the Relationship Between Insulin and Diabetes
+```{r}
+ggplot(data, aes(x = factor(Outcome), y = log(Insulin))) +
+  geom_boxplot() +
+  labs(x = "Outcome", y = "Insulin", title = "Boxplot of Insulin by Diabetes Outcome") +
+  theme_minimal()
+```
+<span style="color:darkorange;">Explanation</span>: This boxplot shows the distribution of insulin levels for individuals with and without diabetes (Outcome). Higher insulin levels might indicate a stronger link to diabetes.
+These are the contents of the boxplot that show <span style="color:red;">the level of insulin for sufferers and non-sufferers of diabetes. The median for diabetic patients, where `Outcome = 1`, is slightly higher compared to that of non-diabetic ones, where `Outcome = 0`</span>. 
+<span style="color:red;">also  the outliers in the graph suggest that some people without diabetes have a higher level of insulin, and for those who are suffering from diabetes, it is vice versa</span>. One of the hypothesis could be insulin plays a really complicated role when it comes to Diabetes. 
+
+## Visualization of the relationship between Glucose and Diabetes
+```{r}
+ggplot(data, aes(x = factor(Outcome), y = Glucose)) +
+  geom_boxplot() +
+  labs(x = "Outcome", y = "Glucose", title = "Boxplot of Glucose by Diabetes Outcome") +
+  theme_minimal()
+```
+<span style="color:darkorange;">Explanation</span>: Similar to insulin, this plot explores the <span style="color:purple;">distribution of glucose</span> levels for individuals with and without diabetes.
+
+In this graph, we see a more striking difference in glucose levels between the two groups. <span style="color:red;">The individuals with diabetes tend to have really high glucose levels, with a clear separation in medians</span>. The middle 50% of values for those with diabetes are much higher, and the outliers are typically on the lower end, which would indicate that most individuals with diabetes have consistently very high levels of glucose. By comparison, <span style="color:red;">glucose has a seemingly much stronger and more direct association with diabetes than insulin</span>. Thus, this separation may also suggest that glucose might be a better predictor for diabetes risk than insulin alone, or at least a more dominant one.
+
+## Density Plot of Insulin by Diabetes Outcome
+```{r}
+ggplot(data, aes(x = log(Insulin), fill = factor(Outcome))) +
+  geom_density(alpha = 0.5) +
+  labs(x = "Insulin", y = "Density", fill = "Outcome",
+       title = "Density Plot of Insulin by Diabetes Outcome") +
+  theme_minimal() +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"))
+```
+<span style="color:darkorange;">Explanation</span>: This density plot shows that the subjects without diabetes, `Outcome = 0`, in blue, have lower insulin and peak around 4. In comparison, those with diabetes, `Outcome = 1` in red, peak higher, closer to 5. However, there is a considerable amount of overlap between the two distributions at insulin levels between 4 and 5, which means that insulin doesn't really provide a clear boundary for diabetes. What we could conclude from this graph could be that  <span style="color:red;"> although insulin can be associated with diabetes, it is not a considerable independent factor</span>. 
+
+
+## Density Plot of Glucose by Diabetes Outcome
+```{r}
+ggplot(data, aes(x = Glucose, fill = factor(Outcome))) +
+  geom_density(alpha = 0.5) +
+  labs(x = "Glucose", y = "Density", fill = "Outcome",
+       title = "Density Plot of Glucose by Diabetes Outcome") +
+  theme_minimal() +
+  scale_fill_manual(values = c("0" = "blue", "1" = "red"))
+```
+<span style="color:darkorange;">Explanation</span>: In this density plot, People without diabetes,     `Outcome = 0`, is in blue centered around 100 and people with diabetes are `Outcome = 1` in red centered closer to 150. Just like the previous graph on Insulin, there is an overlap, however the plot of Glucose has much less overlap compared to the previous one. <span style="color:red;">One of the conclusion we can draw from this is that glucose could be a more important direct indicator  when it comes to diabetes compared to Insulin</span>
+
+
+# Show the relationship between glucose and insulin
+
+```{r}
+ggplot(data, aes(x = Glucose, y = log(Insulin))) +
+  geom_point(alpha = 0.6, color = "blue") +
+  geom_smooth(method = "lm", color = "red", se = TRUE) +
+  labs(x = "Glucose", y = "log(Insulin)",
+       title = "Scatter Plot of Glucose vs. Insulin") +
+  theme_minimal()
+```
+
+<span style="color:darkorange;">Explanation</span>: The Scatterplot above tells us the relationship between glucose and insulin based on linear regression. <span style="color:red;">The pattern of the red trend line suggests that there is a positive correlation between glucose and insulin, what it means is that as glucose level increases, insulin tends to increase as well</span>. The shaded area around the trend line is called confidence interval, what it means in this scenario is that there are also other factors that affect the result. 
+
+```{r}
+summary_data <- data %>%
+  group_by(Glucose_Quartile, Insulin_Quartile) %>%
+  summarise(Outcome_Percent = mean(Outcome == 1) * 100) %>%
+  ungroup()  
+
+```
+<span style="color:darkorange;">Explanation</span>: What this part of code does is that it groups data into a glucose-insulin quartile group, it will summarize the relationship between diabetes and various combination of glucose and insulin levels. 
+
+# Plotting hierarchical effects of glucose & insulin on diabetes 
+
+```{r}
+ggplot(summary_data, aes(x = Glucose_Quartile, y = Outcome_Percent, color = factor(Insulin_Quartile))) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Glucose Quantile", y = "Diabetes Rate (%)", color = "Insulin Quantile",
+       title = "Diabetes Rate by Glucose and Insulin Quantiles") +
+  theme_minimal()
+```
+<span style="color:darkorange;">Explanation</span>: The line plot above shows us the relationship between the rate of dibetes and glucose level with respect to different insulin quantile. From this graph, it is evident that for each separate insulin quantile, the rate of diabetes increases with an increased glucose quantile, along with showing a strong correlation between higher levels of glucose and risk with diabetes. They are remarkably in the same direction for each separate quantile of insulin no matter what color it is. We can conclude that <span style="color:red;">while the level of insulin makes a difference in the risk for diabetes, it is glucose level which has a more prominent and consistent influence</span>. 
+
+# Plotting hierarchical effects of insulin & glucose on diabetes
+
+```{r}
+ggplot(summary_data, aes(x = Insulin_Quartile, y = Outcome_Percent, color = factor(Glucose_Quartile))) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Insulin Quartile", y = "Diabetes Rate (%)", color = "Glucose Quartile",
+       title = "Diabetes Rate by Glucose and Insulin Quantiles") +
+  theme_minimal()
+
+table(data$Glucose_Quartile, data$Insulin_Quartile)
+```
+<span style="color:darkorange;">Explanation</span>: The line plot above shows the percentage of individuals with diabetes across different insulin quartiles, each colored line represents a specific level of glucose quaretiles. The table below shows the distribution of individuals across glucose and insulin quartiles.The lines are baiscally flat, especially for the high glucose quartile line, it remains the same for all insulin levels. Although for otehr 2 lines we might see some shift, but one thing we can definitely conclude is that glucose level is the main determinant for diabetes risk. 
